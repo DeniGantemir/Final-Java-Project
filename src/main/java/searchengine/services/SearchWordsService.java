@@ -92,10 +92,10 @@ public class SearchWordsService {
     }
 
     private Map<String, Integer> filterFrequentLemmas(Map<String, Integer> lemmaCounts) {
-        int threshold = 6; // если 6 - не добавлять в список
+        int theMostFrequently = 6; // если 6 - не добавлять в список
         Map<String, Integer> filteredLemmas = new HashMap<>();
         for (Map.Entry<String, Integer> lemma : lemmaCounts.entrySet()) {
-            if (lemma.getValue() < threshold) {
+            if (lemma.getValue() < theMostFrequently) {
                 filteredLemmas.put(lemma.getKey(), lemma.getValue());
             }
         }
