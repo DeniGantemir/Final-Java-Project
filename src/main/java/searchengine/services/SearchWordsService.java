@@ -138,7 +138,7 @@ public class SearchWordsService {
 
     private String highlightedSearchedQueryInPageContent(String text, String[] queryWords) {
         for (String queryWord : queryWords) {
-            text = text.toLowerCase().replaceAll("(" + Pattern.quote(queryWord) + ")", "<b>$1</b>");
+            text = text.toLowerCase().replace(queryWord, "<b>" + queryWord + "</b>");
         }
         return text;
     }
