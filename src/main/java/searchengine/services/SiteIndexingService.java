@@ -75,27 +75,18 @@ public class SiteIndexingService {
 
 
     public void indexPageMethod(String url) throws IOException {
-        SiteEntity siteEntity = siteRepository.findAll().stream()
-                .filter(se -> Objects.equals(se.getUrl(), url))
-                .findFirst()
-                .orElseThrow();
+        SiteEntity siteEntity = siteRepository.findByUrl(url).orElseThrow();
 
-        List<PageEntity> existingPageEntities = pageRepository.findAll().stream()
-                .filter(pe -> Objects.equals(pe.getPath(), url) || Objects.equals(pe.getSiteEntity(), siteEntity))
-                .toList();
+        List<PageEntity> existingPageEntities = pageRepository.findByPathOrSiteEntity(url, siteEntity);
 
         for (PageEntity existingPageEntity : existingPageEntities) {
-            List<IndexEntity> indexEntities = indexEntityRepository.findAll().stream()
-                    .filter(ie -> ie.getPageEntity().equals(existingPageEntity))
-                    .toList();
+            List<IndexEntity> indexEntities = indexEntityRepository.findByPageEntity(existingPageEntity);
             indexEntities.forEach(indexEntityRepository::delete);
             pageRepository.delete(existingPageEntity);
         }
         pageRepository.flush();
 
-        List<LemmaEntity> lemmaEntities = lemmaRepository.findAll().stream()
-                .filter(le -> le.getSiteEntity().equals(siteEntity))
-                .toList();
+        List<LemmaEntity> lemmaEntities = lemmaRepository.findBySiteEntity(siteEntity);
         lemmaEntities.forEach(lemmaRepository::delete);
 
         pageLemmaIndexClass.getPageLemmaIndexSiteMethod(siteEntity, url);

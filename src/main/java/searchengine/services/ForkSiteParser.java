@@ -5,7 +5,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.boot.json.JsonParseException;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -26,7 +28,12 @@ public class ForkSiteParser extends RecursiveTask<Set<String>> {
         Set<String> links = new TreeSet<>();
         HashSet<ForkSiteParser> taskList = new HashSet<>();
         try {
-            Thread.sleep(1000);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                LOGGER.error("Поток был прерван", e);
+            }
             Document doc = Jsoup.connect(link).
                     userAgent("Mozilla/5.0 (Windows; U; WindowsNT 5.1; en-US; rv1.8.1.6) Gecko/20070725 Firefox/2.0.0.6").
                     referrer("http://www.google.com").get();
@@ -45,6 +52,10 @@ public class ForkSiteParser extends RecursiveTask<Set<String>> {
             }
         } catch (HttpStatusException h) {
             LOGGER.error("Ошибка 404 получения URL: ", link, h);
+        } catch (IOException e) {
+            LOGGER.error("Ошибка ввода-вывода при получении URL: ", link, e);
+        } catch (JsonParseException e) {
+            LOGGER.error("Ошибка парсинга HTML-документа: ", link, e);
         } catch (Exception e) {
             LOGGER.error("Ошибка парсинга ссылки: ", link, e);
         }

@@ -13,7 +13,7 @@ import searchengine.repository.IndexEntityRepository;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 
 @Service
@@ -35,10 +35,27 @@ public class SearchWordsService {
         sortedLemmas.sort(Map.Entry.comparingByValue());
 
         // Находим pages, которые соответсвуют lemma
+        List<SearchItem> searchItems = processOfSavingItems(sortedLemmas, site, query);
+
+        // сортируем по релевантности
+        searchItems.sort((a, b) -> Double.compare(b.getRelevance(), a.getRelevance()));
+
+        int effectiveOffset = offset == 0 ? 0 : offset;
+        int effectiveLimit = limit == 0 ? 20 : limit;
+        searchItems = searchItems.subList(effectiveOffset, Math.min(effectiveOffset + effectiveLimit, searchItems.size()));
+
+        // добавляю в reponse класс
+        SearchResponse response = new SearchResponse();
+        response.setResult(!searchItems.isEmpty());
+        response.setCount(searchItems.size());
+        response.setData(searchItems);
+        return response;
+    }
+    private List<SearchItem> processOfSavingItems(List<Map.Entry<String, Integer>> sortedLemmas, String site, String query) throws IOException {
         List<SearchItem> searchItems = new ArrayList<>();
         for (Map.Entry<String, Integer> lemma : sortedLemmas) {
             List<IndexEntity> indexes;
-            if (site!= null &&!site.isEmpty()) {
+            if (site != null && !site.isEmpty()) {
                 indexes = indexEntityRepository.findAll().stream()
                         .filter(index -> index.getLemmaEntity().getLemma().equals(lemma.getKey()) && index.getPageEntity().getSiteEntity().getUrl().equals(site))
                         .toList();
@@ -58,7 +75,7 @@ public class SearchWordsService {
                 String title = doc.select("title").text();
                 searchItem.setTitle(title);
 
-                String snippet = generateSnippet(removeHtmlTags(page.getContent()), lemmaCounts);
+                String snippet = generateSnippet(removeHtmlTags(page.getContent()), query);
                 searchItem.setSnippet(snippet);
 
                 // Находим relevance
@@ -78,17 +95,7 @@ public class SearchWordsService {
                 searchItems.add(searchItem);
             }
         }
-        // сортируем по релевантности
-        searchItems.sort((a, b) -> Double.compare(b.getRelevance(), a.getRelevance()));
-
-        searchItems = searchItems.subList(0, Math.min(limit > 0? limit : 20, searchItems.size()));
-
-        // добавляю в reponse класс
-        SearchResponse response = new SearchResponse();
-        response.setResult(!searchItems.isEmpty());
-        response.setCount(searchItems.size());
-        response.setData(searchItems);
-        return response;
+        return searchItems;
     }
 
     private Map<String, Integer> filterFrequentLemmas(Map<String, Integer> lemmaCounts) {
@@ -101,31 +108,44 @@ public class SearchWordsService {
         }
         return filteredLemmas;
     }
-    private String removeHtmlTags(String htmlContent) {
-        return Jsoup.parse(htmlContent).select("body").text();
-    }
-
-    private String generateSnippet(String content, Map<String, Integer> lemmaCounts) throws IOException {
+    private String generateSnippet(String pageContent, String query) throws IOException {
         LemmaFinder lemmaFinder = LemmaFinder.getInstance();
-        Map<String, Integer> contentLemmas = lemmaFinder.collectLemmas(content);
+        // делю запрос, если их больше одного и делаю буквы строчными
+        String[] queryWords = query.toLowerCase().split("\\s+");
+        Set<String> lemmaForms = new HashSet<>();
+        for (String queryWord : queryWords) {
+            lemmaForms.addAll(lemmaFinder.getLemmaSet(queryWord));
+        }
 
         StringBuilder snippet = new StringBuilder();
-        for (Map.Entry<String, Integer> lemma : lemmaCounts.entrySet()) {
-            if (contentLemmas.containsKey(lemma.getKey())) {
-                int index = content.toLowerCase().indexOf(lemma.getKey().toLowerCase());
-                if (index != -1) {
-                    int startIndex = Math.max(0, index - 150);
-                    int endIndex = Math.min(content.length(), index + lemma.getKey().length() + 150);
-
-                    String snippetPart = content.substring(startIndex, endIndex);
-                    String text = Jsoup.parse(snippetPart).text().replaceAll("<.*?>", "");
-                    text = text.toLowerCase().replaceAll(lemma.getKey().toLowerCase(), "<b>" + lemma.getKey().toLowerCase() + "</b>");
-                    snippet.append("...").append(text).append("...");
+        for (String lemmaForm : lemmaForms) {
+            String prefix = lemmaForm.substring(0, Math.min(lemmaForm.length(), 5)); // взял число 5 так как лучше подходит при выводе по префиксу
+            int index = pageContent.toLowerCase().indexOf(prefix);
+            while (index != -1) {
+                int startIndex = Math.max(0, index - 150);
+                int endIndex = Math.min(pageContent.length(), index + lemmaForm.length() + 150);
+                String snippetText = pageContent.substring(startIndex, endIndex);
+                snippetText = highlightedSearchedQueryInPageContent(snippetText, queryWords);
+                if (snippetText.length() > 300) {
+                    snippetText = snippetText.substring(0, 300) + "...";
                 }
+                snippet.append("...").append(snippetText).append("...\n");
+                break;
             }
         }
         return snippet.toString().trim();
     }
+
+    private String highlightedSearchedQueryInPageContent(String text, String[] queryWords) {
+        for (String queryWord : queryWords) {
+            text = text.toLowerCase().replaceAll("(" + Pattern.quote(queryWord) + ")", "<b>$1</b>");
+        }
+        return text;
+    }
+    private String removeHtmlTags(String htmlContent) {
+        return Jsoup.parse(htmlContent).select("body").text();
+    }
+
     private Map<PageEntity, Float> getAbsoluteRelevance(List<IndexEntity> pagesList) {
         Map<PageEntity, Float> pagesAbsoluteRelevance = new HashMap<>();
         for (IndexEntity index : pagesList) {

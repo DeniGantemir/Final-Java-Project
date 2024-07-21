@@ -13,6 +13,27 @@ public class LemmaFinder {
     private static final String WORD_TYPE_REGEX = "\\W\\w&&[^а-яА-Я\\s]";
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ"};
 
+    public void search(String query, String text) throws IOException {
+        LemmaFinder lemmaFinder = LemmaFinder.getInstance();
+        // Получаем лемму и разные формы слова из поискового запроса
+        Set<String> lemmaForms = lemmaFinder.getLemmaSet(query);
+
+        // Ищем текст, где встречается слово в разных формах
+        StringBuilder result = new StringBuilder();
+        for (String lemmaForm : lemmaForms) {
+            int index = text.indexOf(lemmaForm);
+            while (index!= -1) {
+                int startIndex = Math.max(0, index - 20);
+                int endIndex = Math.min(text.length(), index + lemmaForm.length() + 20);
+                result.append(text, startIndex, endIndex).append("\n");
+                index = text.indexOf(lemmaForm, index + 1);
+            }
+        }
+
+        // Выводим результат
+        System.out.println(result.toString().strip());
+    }
+
     public static LemmaFinder getInstance() throws IOException {
         LuceneMorphology morphology= new RussianLuceneMorphology();
         return new LemmaFinder(morphology);
