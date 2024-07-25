@@ -13,7 +13,6 @@ import searchengine.repository.IndexEntityRepository;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Pattern;
 
 
 @Service
@@ -40,14 +39,19 @@ public class SearchWordsService {
         // сортируем по релевантности
         searchItems.sort((a, b) -> Double.compare(b.getRelevance(), a.getRelevance()));
 
-        int effectiveOffset = offset == 0 ? 0 : offset;
-        int effectiveLimit = limit == 0 ? 20 : limit;
+        int totalCount = searchItems.size();
+
+        // устанавливаем limit и offset
+        offset = 0;
+        limit = 10;
+        int effectiveOffset = offset;
+        int effectiveLimit = limit;
         searchItems = searchItems.subList(effectiveOffset, Math.min(effectiveOffset + effectiveLimit, searchItems.size()));
 
-        // добавляю в reponse класс
+        // добавляю в response класс
         SearchResponse response = new SearchResponse();
         response.setResult(!searchItems.isEmpty());
-        response.setCount(searchItems.size());
+        response.setCount(totalCount);
         response.setData(searchItems);
         return response;
     }
@@ -55,6 +59,7 @@ public class SearchWordsService {
         List<SearchItem> searchItems = new ArrayList<>();
         for (Map.Entry<String, Integer> lemma : sortedLemmas) {
             List<IndexEntity> indexes;
+            // проверяем поиск по определенному сайту или по всем
             if (site != null && !site.isEmpty()) {
                 indexes = indexEntityRepository.findAll().stream()
                         .filter(index -> index.getLemmaEntity().getLemma().equals(lemma.getKey()) && index.getPageEntity().getSiteEntity().getUrl().equals(site))
@@ -119,13 +124,14 @@ public class SearchWordsService {
 
         StringBuilder snippet = new StringBuilder();
         for (String lemmaForm : lemmaForms) {
-            String prefix = lemmaForm.substring(0, Math.min(lemmaForm.length(), 5)); // взял число 5 так как лучше подходит при выводе по префиксу
+            int prefixLength = lemmaForm.length() / 2;
+            String prefix = lemmaForm.substring(0, prefixLength); // при совпадений половины длины слова
             int index = pageContent.toLowerCase().indexOf(prefix);
             while (index != -1) {
                 int startIndex = Math.max(0, index - 150);
                 int endIndex = Math.min(pageContent.length(), index + lemmaForm.length() + 150);
                 String snippetText = pageContent.substring(startIndex, endIndex);
-                snippetText = highlightedSearchedQueryInPageContent(snippetText, queryWords);
+                snippetText = highlightedSearchedQueryInPageContent(snippetText, queryWords, lemmaForms);
                 if (snippetText.length() > 300) {
                     snippetText = snippetText.substring(0, 300) + "...";
                 }
@@ -136,11 +142,32 @@ public class SearchWordsService {
         return snippet.toString().trim();
     }
 
-    private String highlightedSearchedQueryInPageContent(String text, String[] queryWords) {
-        for (String queryWord : queryWords) {
-            text = text.toLowerCase().replace(queryWord, "<b>" + queryWord + "</b>");
+    private String highlightedSearchedQueryInPageContent(String text, String[] queryWords, Set<String> lemmaForms) {
+        String[] words = text.split("\\s+");
+        StringBuilder highlightedText = new StringBuilder();
+        for (String word : words) {
+            boolean match = false;
+            for (String queryWord : queryWords) {
+                if (word.toLowerCase().contains(queryWord)) {
+                    match = true;
+                    break;
+                }
+            }
+            for (String lemmaForm : lemmaForms) {
+                int prefixLength = lemmaForm.length() / 2;
+                String prefix = lemmaForm.substring(0, prefixLength);
+                if (word.toLowerCase().startsWith(prefix)) {
+                    match = true;
+                    break;
+                }
+            }
+            if (match) {
+                highlightedText.append("<b>").append(word).append("</b>").append(" ");
+            } else {
+                highlightedText.append(word).append(" ");
+            }
         }
-        return text;
+        return highlightedText.toString().trim();
     }
     private String removeHtmlTags(String htmlContent) {
         return Jsoup.parse(htmlContent).select("body").text();
