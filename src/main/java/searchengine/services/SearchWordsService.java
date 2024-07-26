@@ -104,10 +104,10 @@ public class SearchWordsService {
     }
 
     private Map<String, Integer> filterFrequentLemmas(Map<String, Integer> lemmaCounts) {
-        int theMostFrequently = 6; // если 6 - не добавлять в список
+        int theMostFrequent = 10; // если 10 - не добавлять в список
         Map<String, Integer> filteredLemmas = new HashMap<>();
         for (Map.Entry<String, Integer> lemma : lemmaCounts.entrySet()) {
-            if (lemma.getValue() < theMostFrequently) {
+            if (lemma.getValue() < theMostFrequent) {
                 filteredLemmas.put(lemma.getKey(), lemma.getValue());
             }
         }
@@ -125,7 +125,7 @@ public class SearchWordsService {
         StringBuilder snippet = new StringBuilder();
         for (String lemmaForm : lemmaForms) {
             int prefixLength = lemmaForm.length() / 2;
-            String prefix = lemmaForm.substring(0, prefixLength); // при совпадений половины длины слова
+            String prefix = lemmaForm.substring(0, prefixLength + 1); // при совпадений половины длины слова
             int index = pageContent.toLowerCase().indexOf(prefix);
             while (index != -1) {
                 int startIndex = Math.max(0, index - 150);
@@ -155,7 +155,7 @@ public class SearchWordsService {
             }
             for (String lemmaForm : lemmaForms) {
                 int prefixLength = lemmaForm.length() / 2;
-                String prefix = lemmaForm.substring(0, prefixLength);
+                String prefix = lemmaForm.substring(0, prefixLength + 1);
                 if (word.toLowerCase().startsWith(prefix)) {
                     match = true;
                     break;

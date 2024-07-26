@@ -16,7 +16,6 @@ import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.ForkJoinPool;
@@ -51,7 +50,9 @@ public class PageLemmaIndexClass {
                 PageEntity pageEntity = dtoTransferService.mapToPageEntity(pageDTO, siteEntity);
                 pageRepository.save(pageEntity);
 
-                Map<String, Integer> lemmaCounts = lemmaFinder.collectLemmas(content);
+                // убираю HTML-теги
+                String cleanContent = Jsoup.parse(content).text();
+                Map<String, Integer> lemmaCounts = lemmaFinder.collectLemmas(cleanContent);
 
                 lemmaCounts.forEach((lemma, frequency) -> {
                     LemmaDTO lemmaDTO = new LemmaDTO();
