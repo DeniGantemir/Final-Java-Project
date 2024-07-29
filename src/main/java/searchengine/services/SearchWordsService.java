@@ -183,7 +183,9 @@ public class SearchWordsService {
     private Map<PageEntity, Float> getAbsoluteRelevance(List<IndexEntity> pagesList) {
         Map<PageEntity, Float> pagesAbsoluteRelevance = new HashMap<>();
         for (IndexEntity index : pagesList) {
+            // Получаю сущность страницы, связанную с текущей сущностью индекса
             PageEntity pageEntity = index.getPageEntity();
+            // Если сущность страницы есть в мапе - увеличить ее абсолют. релевантность, а иначе - добавить ее с начальной абсолют. релевантностью
             if (pagesAbsoluteRelevance.containsKey(pageEntity)) {
                 float absoluteRelevance = pagesAbsoluteRelevance.get(pageEntity) + index.getRank();
                 pagesAbsoluteRelevance.put(pageEntity, absoluteRelevance);
@@ -194,11 +196,14 @@ public class SearchWordsService {
         return pagesAbsoluteRelevance;
     }
     private TreeMap<Float, PageEntity> getRelevance(List<IndexEntity> pagesList) {
+        // Рассчитываем абсолют. релевантность каждой страницы
         Map<PageEntity, Float> pagesAbsoluteRelevance = getAbsoluteRelevance(pagesList);
+        // Находим максимальную абсолютную релевантность
         float maxAbsoluteRelevance = pagesAbsoluteRelevance.values().stream().max(Float::compare).orElse(Float.MIN_VALUE);
 
         TreeMap<Float, PageEntity> pagesRelevance = new TreeMap<>(Comparator.reverseOrder());
         for (Map.Entry<PageEntity, Float> entry : pagesAbsoluteRelevance.entrySet()) {
+            // Делим их
             float relevance = entry.getValue() / maxAbsoluteRelevance;
             pagesRelevance.put(relevance, entry.getKey());
         }
