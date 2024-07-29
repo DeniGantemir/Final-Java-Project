@@ -1,4 +1,4 @@
-package searchengine.model;
+package searchengine.modelEntity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

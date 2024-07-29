@@ -4,13 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.stereotype.Service;
-import searchengine.DTOClasses.IndexDTO;
-import searchengine.DTOClasses.LemmaDTO;
-import searchengine.DTOClasses.PageDTO;
-import searchengine.model.IndexEntity;
-import searchengine.model.LemmaEntity;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
+import searchengine.dto.dtoClasses.IndexDTO;
+import searchengine.dto.dtoClasses.LemmaDTO;
+import searchengine.dto.dtoClasses.PageDTO;
+import searchengine.modelEntity.IndexEntity;
+import searchengine.modelEntity.LemmaEntity;
+import searchengine.modelEntity.PageEntity;
+import searchengine.modelEntity.SiteEntity;
 import searchengine.repository.IndexEntityRepository;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
@@ -32,8 +32,7 @@ public class PageLemmaIndexClass {
     private final DTOTransferService dtoTransferService = new DTOTransferService();
 
     public void getPageLemmaIndexSiteMethod(SiteEntity siteEntity, String url) throws IOException {
-        String mainPageUrl = url.replaceAll("www.", "");
-        ForkSiteParser parser = new ForkSiteParser(mainPageUrl);
+        ForkSiteParser parser = new ForkSiteParser(url);
         TreeSet<String> urlForkJoinParser = new TreeSet<>(forkJoinPool.invoke(parser));
 
         LemmaFinder lemmaFinder = LemmaFinder.getInstance();
@@ -43,7 +42,7 @@ public class PageLemmaIndexClass {
             String content = doc.html();
             try {
                 PageDTO pageDTO = new PageDTO();
-                pageDTO.setPath(normalizeUrl(pageUrl, mainPageUrl));
+                pageDTO.setPath(normalizeUrl(pageUrl, url));
                 pageDTO.setCode(doc.connection().response().statusCode());
                 pageDTO.setContent(content);
                 pageDTO.setSiteEntityId(siteEntity.getId());

@@ -3,8 +3,8 @@ package searchengine.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import org.springframework.stereotype.Repository;
-import searchengine.model.IndexEntity;
-import searchengine.model.PageEntity;
+import searchengine.modelEntity.IndexEntity;
+import searchengine.modelEntity.PageEntity;
 
 import java.util.List;
 

@@ -1,18 +1,14 @@
 package searchengine.services;
 
 import org.jsoup.HttpStatusException;
-import searchengine.DTOClasses.SiteDTO;
+import searchengine.dto.dtoClasses.SiteDTO;
 import searchengine.config.Site;
-import searchengine.model.*;
-import searchengine.repository.IndexEntityRepository;
-import searchengine.repository.LemmaRepository;
-import searchengine.repository.PageRepository;
+import searchengine.modelEntity.*;
 import searchengine.repository.SiteRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 import static org.hibernate.tool.schema.SchemaToolingLogging.LOGGER;
 

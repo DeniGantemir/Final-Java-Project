@@ -29,7 +29,7 @@ public class ForkSiteParser extends RecursiveTask<Set<String>> {
         HashSet<ForkSiteParser> taskList = new HashSet<>();
         try {
             try {
-                Thread.sleep(1000);
+                Thread.sleep(2000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOGGER.error("Поток был прерван", e);
@@ -40,15 +40,23 @@ public class ForkSiteParser extends RecursiveTask<Set<String>> {
             Elements element = doc.select("a");
             for (Element e : element) {
                 String linkFromAttr = e.absUrl("href").replaceAll("/$", "");
-                if (!linkFromAttr.contains(link) || !linkSet.add(linkFromAttr) ||
-                        linkFromAttr.contains("#") || linkFromAttr.contains(".png") ||
-                        linkFromAttr.contains(".pdf")) {
-                    continue;
+                boolean skipLink = false;
+                try {
+                    if (!linkFromAttr.contains(link) || !linkSet.add(linkFromAttr) ||
+                            linkFromAttr.contains("#") || linkFromAttr.contains(".png") ||
+                            linkFromAttr.contains(".pdf")) {
+                        skipLink = true;
+                    }
+                } catch (Exception ex) {
+                    LOGGER.error("Ошибка проверки ссылки: ", linkFromAttr, ex);
+                    skipLink = true;
                 }
-                links.add(linkFromAttr);
-                ForkSiteParser task = new ForkSiteParser(linkFromAttr);
-                task.fork();
-                taskList.add(task);
+                if (!skipLink) {
+                    links.add(linkFromAttr);
+                    ForkSiteParser task = new ForkSiteParser(linkFromAttr);
+                    task.fork();
+                    taskList.add(task);
+                }
             }
         } catch (HttpStatusException h) {
             LOGGER.error("Ошибка 404 получения URL: ", link, h);
@@ -56,8 +64,6 @@ public class ForkSiteParser extends RecursiveTask<Set<String>> {
             LOGGER.error("Ошибка ввода-вывода при получении URL: ", link, e);
         } catch (JsonParseException e) {
             LOGGER.error("Ошибка парсинга HTML-документа: ", link, e);
-        } catch (Exception e) {
-            LOGGER.error("Ошибка парсинга ссылки: ", link, e);
         }
 
         for (ForkSiteParser task1 : taskList) {

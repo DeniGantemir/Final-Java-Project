@@ -1,13 +1,13 @@
 package searchengine.services;
 
-import searchengine.DTOClasses.IndexDTO;
-import searchengine.DTOClasses.LemmaDTO;
-import searchengine.DTOClasses.PageDTO;
-import searchengine.DTOClasses.SiteDTO;
-import searchengine.model.IndexEntity;
-import searchengine.model.LemmaEntity;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
+import searchengine.dto.dtoClasses.IndexDTO;
+import searchengine.dto.dtoClasses.LemmaDTO;
+import searchengine.dto.dtoClasses.PageDTO;
+import searchengine.dto.dtoClasses.SiteDTO;
+import searchengine.modelEntity.IndexEntity;
+import searchengine.modelEntity.LemmaEntity;
+import searchengine.modelEntity.PageEntity;
+import searchengine.modelEntity.SiteEntity;
 
 public class DTOTransferService {
     public SiteEntity mapToSiteEntity(SiteDTO siteDTO) {

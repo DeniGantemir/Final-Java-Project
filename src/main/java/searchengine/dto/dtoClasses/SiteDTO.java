@@ -1,10 +1,10 @@
-package searchengine.DTOClasses;
+package searchengine.dto.dtoClasses;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import searchengine.model.IndexStatus;
+import searchengine.modelEntity.IndexStatus;
 
 import java.time.LocalDateTime;
 

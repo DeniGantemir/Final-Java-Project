@@ -2,26 +2,23 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import searchengine.DTOClasses.SiteDTO;
-import searchengine.config.Site;
-import searchengine.config.SitesList;
 import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
-import searchengine.model.LemmaEntity;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.repository.IndexEntityRepository;
+import searchengine.modelEntity.LemmaEntity;
+import searchengine.modelEntity.PageEntity;
+import searchengine.modelEntity.SiteEntity;
 import searchengine.repository.LemmaRepository;
 import searchengine.repository.PageRepository;
 import searchengine.repository.SiteRepository;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -73,7 +70,10 @@ public class StatisticsServiceImpl implements StatisticsService {
             item.setPages(pages);
             item.setLemmas(lemmas);
             item.setStatus(siteEntity.getStatus().toString());
-            item.setStatusTime(siteEntity.getStatusTime().toEpochSecond(ZoneOffset.UTC));
+            LocalDateTime localDateTime = siteEntity.getStatusTime();
+            ZonedDateTime zdt = ZonedDateTime.of(localDateTime, ZoneId.systemDefault());
+            long date = zdt.toInstant().toEpochMilli();
+            item.setStatusTime(date);
             if (siteEntity.getLastError()!= null) {
                 item.setError(siteEntity.getLastError());
             }

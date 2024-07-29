@@ -1,4 +1,4 @@
-package searchengine.DTOClasses;
+package searchengine.dto.dtoClasses;
 
 
 import lombok.AllArgsConstructor;
